@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Unit Ops</title>
+<style>
+:root {
+  --bg:        #0A0C0B;
+  --surface:   #131614;
+  --surface2:  #1A1E1C;
+  --surface3:  #202523;
+  --border:    #252B28;
+  --border2:   #2E3632;
+  --od:        #3D6B4F;
+  --od-bright: #4DFF91;
+  --od-dim:    #1E3828;
+  --amber:     #E8951A;
+  --red:       #E03535;
+  --blue:      #3A8FD4;
+  --text:      #D8E0DA;
+  --text-dim:  #6B7D72;
+  --text-mid:  #9AADA1;
+  --mono:      'Courier New', monospace;
+  --nav-h:     60px;
+  --hdr-h:     52px;
+  --bar-h:     32px;
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+
+/* ── HEADER ── */
+#hdr {
+  position:fixed; top:0; left:0; right:0; height:var(--hdr-h);
+  background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 14px; z-index:50;
+}
+.hdr-left { display:flex; flex-direction:column; }
+.hdr-unit { font-family:var(--mono); font-size:13px; font-weight:bold; color:var(--od-bright); letter-spacing:3px; }
+.hdr-sub  { font-family:var(--mono); font-size:9px; color:var(--text-dim); letter-spacing:1px; margin-top:1px; }
+.hdr-right { display:flex; align-items:center; gap:10px; }
+#zulu { font-family:var(--mono); font-size:12px; color:var(--text-dim); }
+#sync-btn {
+  background:none; border:1px solid var(--border2); border-radius:5px;
+  color:var(--text-dim); font-family:var(--mono); font-size:10px;
+  padding:4px 9px; cursor:pointer; letter-spacing:1px;
+  transition:border-color .15s, color .15s;
+}
+#sync-btn:active { border-color:var(--od-bright); color:var(--od-bright); }
+
+/* ── READINESS STRIP ── */
+#rstrip {
+  position:fixed; top:var(--hdr-h); left:0; right:0; height:var(--bar-h);
+  background:var(--surface2); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px; padding:0 14px; z-index:49;
+}
+.rstrip-label { font-family:var(--mono); font-size:9px; color:var(--text-dim); letter-spacing:1.5px; white-space:nowrap; }
+#r-track { flex:1; height:5px; background:var(--border2); border-radius:3px; overflow:hidden; }
+#r-fill  { height:100%; width:0%; border-radius:3px; transition:width .7s ease, background .4s; background:var(--od-bright); }
+#r-fill.warn { background:var(--amber); }
+#r-fill.crit { background:var(--red); animation:rpulse 1s ease-in-out infinite; }
+@keyframes rpulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+#r-pct { font-family:var(--mono); font-size:11px; font-weight:bold; color:var(--od-bright); min-width:34px; text-align:right; }
+
+/* ── SCROLL CONTAINER ── */
+#scroller {
+  position:fixed;
+  top:calc(var(--hdr-h) + var(--bar-h));
+  bottom:var(--nav-h);
+  left:0; right:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+/* ── VIEWS ── */
+.view { display:none; }
+.view.active { display:block; padding-bottom:16px; }
+
+/* ── SECTION LABEL ── */
+.slabel {
+  font-family:var(--mono); font-size:9px; letter-spacing:2px;
+  color:var(--text-dim); text-transform:uppercase;
+  padding:14px 14px 7px;
+}
+
+/* ── STAT ROW ── */
+.stat-row { display:grid; gap:7px; padding:0 10px 4px; }
+.stat-row.cols4 { grid-template-columns:repeat(4,1fr); }
+.stat-row.cols3 { grid-template-columns:repeat(3,1fr); }
+.sbox {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:8px; padding:10px 6px; text-align:center;
+}
+.sval { font-family:var(--mono); font-size:22px; font-weight:bold; line-height:1; }
+.slbl { font-size:9px; color:var(--text-dim); letter-spacing:1px; margin-top:3px; text-transform:uppercase; }
+.sval.g { color:var(--od-bright); }
+.sval.r { color:var(--red); }
+.sval.a { color:var(--amber); }
+.sval.b { color:var(--blue); }
+
+/* ── ROSTER LIST ── */
+.roster { padding:0 10px; display:flex; flex-direction:column; gap:1px; }
+
+.soldier-row {
+  display:flex; align-items:center;
+  background:var(--surface); border-radius:7px;
+  padding:11px 12px; gap:12px;
+  cursor:pointer; transition:background .1s;
+  position:relative; overflow:hidden;
+}
+.soldier-row:active { background:var(--surface3); }
+.soldier-row + .soldier-row { margin-top:2px; }
+
+.soldier-indicator {
+  width:3px; height:100%; position:absolute; left:0; top:0; bottom:0; border-radius:7px 0 0 7px;
+}
+.ind-g { background:var(--od-bright); }
+.ind-r { background:var(--red); }
+.ind-a { background:var(--amber); }
+.ind-b { background:var(--blue); }
+.ind-x { background:#444; }
+
+.soldier-avatar {
+  width:38px; height:38px; border-radius:50%;
+  background:var(--surface3); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:11px; font-weight:bold;
+  color:var(--text-mid); flex-shrink:0;
+}
+.soldier-main { flex:1; min-width:0; }
+.soldier-name { font-size:14px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.soldier-sub  { font-size:11px; color:var(--text-dim); margin-top:2px; }
+.soldier-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+
+.badge {
+  font-family:var(--mono); font-size:9px; font-weight:bold;
+  padding:2px 7px; border-radius:3px; letter-spacing:.5px; white-space:nowrap;
+}
+.badge.g { background:#0D2E1A; color:var(--od-bright); }
+.badge.r { background:#2E0D0D; color:#FF6B6B; }
+.badge.a { background:#2E1F05; color:var(--amber); }
+.badge.b { background:#0A1F30; color:#5DADE2; }
+.badge.x { background:#1A1A1A; color:#555; }
+
+.chevron { color:var(--border2); font-size:16px; margin-top:2px; }
+
+/* ── VEHICLE ROW ── */
+.veh-row {
+  display:flex; align-items:center;
+  background:var(--surface); border-radius:7px;
+  padding:11px 12px; gap:12px; cursor:pointer;
+  position:relative; overflow:hidden;
+  transition:background .1s;
+}
+.veh-row:active { background:var(--surface3); }
+.veh-row + .veh-row { margin-top:2px; }
+
+.veh-icon {
+  width:38px; height:38px; border-radius:7px;
+  background:var(--surface3); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0;
+}
+.veh-main { flex:1; min-width:0; }
+.veh-bumper { font-family:var(--mono); font-size:14px; font-weight:bold; color:var(--text); }
+.veh-type   { font-size:11px; color:var(--text-dim); margin-top:2px; }
+.veh-meta   { font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-top:4px; }
+
+/* ── TASK ROW ── */
+.task-row {
+  background:var(--surface); border-radius:7px;
+  padding:12px 14px; cursor:pointer;
+  position:relative; overflow:hidden;
+  transition:background .1s;
+}
+.task-row:active { background:var(--surface3); }
+.task-row + .task-row { margin-top:2px; }
+.task-title  { font-size:14px; font-weight:600; color:var(--text); padding-left:8px; }
+.task-meta   { font-size:11px; color:var(--text-dim); padding-left:8px; margin-top:4px; }
+.task-footer { display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-left:8px; }
+
+/* ── BOTTOM NAV ── */
+#nav {
+  position:fixed; bottom:0; left:0; right:0; height:var(--nav-h);
+  background:var(--surface); border-top:1px solid var(--border);
+  display:flex; z-index:50;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nb {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:3px; cursor:pointer;
+  border:none; background:none; color:var(--text-dim);
+  font-size:9px; letter-spacing:.5px; text-transform:uppercase;
+  transition:color .15s; -webkit-user-select:none;
+}
+.nb:active { background:var(--surface2); }
+.nb.active { color:var(--od-bright); }
+.nb svg { width:20px; height:20px; }
+
+/* ── FAB ── */
+#fab {
+  position:fixed; bottom:calc(var(--nav-h) + 14px); right:14px;
+  width:50px; height:50px; border-radius:50%;
+  background:var(--od); border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 20px rgba(77,255,145,.2); z-index:48;
+  transition:transform .15s;
+}
+#fab:active { transform:scale(.9); }
+#fab svg { width:22px; height:22px; color:#fff; }
+
+/* ══ DETAIL OVERLAY ════════════════════════════════════════════ */
+#detail-overlay {
+  position:fixed; inset:0; z-index:200;
+  background:var(--bg);
+  transform:translateX(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+#detail-overlay.open { transform:translateX(0); }
+
+/* detail header bar */
+#detail-hdr {
+  display:flex; align-items:center; gap:12px;
+  padding:14px 14px 12px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+#detail-back {
+  width:36px; height:36px; border-radius:50%;
+  background:var(--surface2); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; flex-shrink:0;
+}
+#detail-back svg { width:18px; height:18px; color:var(--text); }
+#detail-title-block { flex:1; }
+#detail-name  { font-size:17px; font-weight:700; color:var(--text); }
+#detail-rank  { font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:1px; margin-top:2px; }
+#detail-badge { }
+
+/* detail scroll */
+#detail-body  { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:24px; }
+
+/* status selector inside detail */
+.status-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:7px; padding:0 12px 4px;
+}
+.status-pill {
+  padding:10px 4px; border-radius:8px; text-align:center;
+  font-family:var(--mono); font-size:10px; font-weight:bold;
+  letter-spacing:.5px; cursor:pointer;
+  border:1px solid var(--border2);
+  background:var(--surface); color:var(--text-dim);
+  transition:all .15s;
+}
+.status-pill.selected-g { background:var(--od-dim); border-color:var(--od-bright); color:var(--od-bright); }
+.status-pill.selected-r { background:#2E0D0D; border-color:var(--red); color:#FF6B6B; }
+.status-pill.selected-a { background:#2E1F05; border-color:var(--amber); color:var(--amber); }
+.status-pill.selected-b { background:#0A1F30; border-color:var(--blue); color:#5DADE2; }
+.status-pill.selected-x { background:#1A1A1A; border-color:#444; color:#888; }
+
+/* info field rows */
+.field-group { padding:0 12px; display:flex; flex-direction:column; gap:2px; }
+.field-row {
+  display:flex; align-items:center; min-height:44px;
+  border-bottom:1px solid var(--border);
+  gap:10px;
+}
+.field-row:last-child { border-bottom:none; }
+.field-label { font-family:var(--mono); font-size:9px; letter-spacing:1.5px; color:var(--text-dim); text-transform:uppercase; min-width:80px; flex-shrink:0; }
+.field-val   { font-size:14px; color:var(--text); flex:1; }
+.field-input {
+  flex:1; background:none; border:none; color:var(--text);
+  font-size:14px; font-family:inherit; outline:none;
+  padding:4px 0;
+}
+.field-input::placeholder { color:var(--border2); }
+
+/* section card */
+.detail-section {
+  margin:12px 12px 0;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+}
+.detail-section-title {
+  font-family:var(--mono); font-size:9px; letter-spacing:2px;
+  color:var(--text-dim); text-transform:uppercase;
+  padding:10px 14px 8px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+
+/* save button in detail */
+#detail-save {
+  margin:16px 12px 0;
+  width:calc(100% - 24px);
+  padding:14px; border-radius:10px;
+  background:var(--od); border:none;
+  color:#fff; font-size:15px; font-weight:600;
+  cursor:pointer; transition:opacity .15s;
+}
+#detail-save:active { opacity:.7; }
+
+/* ══ DRAWER MODAL ═══════════════════════════════════════════════ */
+#drawer-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.75); z-index:150;
+  align-items:flex-end;
+}
+#drawer-overlay.open { display:flex; }
+#drawer {
+  width:100%; background:var(--surface);
+  border-top:1px solid var(--border);
+  border-radius:16px 16px 0 0;
+  padding-bottom:env(safe-area-inset-bottom);
+  max-height:88dvh; overflow-y:auto;
+  animation:slideUp .25s ease;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.drawer-handle { width:36px; height:4px; background:var(--border2); border-radius:2px; margin:12px auto 14px; }
+.drawer-title  { font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--text-dim); padding:0 16px 12px; }
+.drawer-field  { padding:0 16px 14px; }
+.drawer-field label { display:block; font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+.drawer-field input,
+.drawer-field select,
+.drawer-field textarea {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  border-radius:8px; color:var(--text); font-size:15px;
+  font-family:inherit; padding:10px 12px; outline:none; -webkit-appearance:none;
+}
+.drawer-field select { appearance:none; }
+.drawer-field textarea { min-height:72px; resize:vertical; }
+.drawer-field input:focus,
+.drawer-field select:focus,
+.drawer-field textarea:focus { border-color:var(--od); }
+.drawer-btns { display:flex; gap:8px; padding:0 16px 16px; }
+.btn { flex:1; padding:13px; border-radius:10px; font-size:15px; font-weight:600; border:none; cursor:pointer; }
+.btn:active { opacity:.7; }
+.btn-p { background:var(--od); color:#fff; }
+.btn-g { background:var(--surface2); color:var(--text-dim); border:1px solid var(--border2); }
+
+/* ── CALENDAR ── */
+.day-scroll {
+  display:flex; overflow-x:auto; padding:0 10px 8px; gap:7px;
+  scrollbar-width:none; -webkit-overflow-scrolling:touch;
+}
+.day-scroll::-webkit-scrollbar { display:none; }
+.day-pill {
+  flex-shrink:0; background:var(--surface); border:1px solid var(--border);
+  border-radius:8px; padding:8px 10px; text-align:center;
+  min-width:50px; cursor:pointer; transition:all .15s;
+}
+.day-pill .dp-dow { font-size:9px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+.day-pill .dp-dom { font-family:var(--mono); font-size:19px; font-weight:bold; color:var(--text); line-height:1.1; }
+.day-pill.active  { background:var(--od-dim); border-color:var(--od-bright); }
+.day-pill.active .dp-dow,
+.day-pill.active .dp-dom { color:var(--od-bright); }
+
+.hour-list { display:flex; flex-direction:column; gap:1px; padding:0 10px; }
+.hour-row  {
+  display:flex; border-radius:6px; overflow:hidden; min-height:46px;
+  cursor:pointer; transition:background .1s;
+}
+.hour-row.night { background:#0C1010; }
+.hour-row.eve   { background:#111518; }
+.hour-row.day   { background:var(--surface); }
+.hour-row:active { filter:brightness(1.3); }
+.hour-time {
+  font-family:var(--mono); font-size:11px; color:var(--text-dim);
+  min-width:46px; display:flex; align-items:center; justify-content:center;
+  border-right:1px solid var(--border); flex-shrink:0;
+}
+.hour-row.night .hour-time { color:#2A3A3A; }
+.hour-content { flex:1; padding:8px 10px; display:flex; flex-direction:column; justify-content:center; gap:2px; }
+.hour-event  { font-size:13px; color:var(--text); font-weight:500; }
+.hour-detail { font-size:11px; color:var(--text-dim); }
+.hour-empty .hour-event { color:#252B28; font-size:12px; }
+.hour-has .hour-time { color:var(--od-bright); }
+
+/* ── EMPTY STATE ── */
+.empty { text-align:center; padding:44px 20px; color:var(--text-dim); font-size:13px; }
+
+/* ── SETUP BANNER ── */
+#setup-banner {
+  margin:12px; padding:14px;
+  background:#1A1200; border:1px solid var(--amber);
+  border-radius:10px; display:none;
+}
+#setup-banner h3 { font-size:13px; color:var(--amber); margin-bottom:6px; }
+#setup-banner p  { font-size:12px; color:var(--text-dim); line-height:1.5; }
+#url-input {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  border-radius:7px; color:var(--text); font-family:var(--mono);
+  font-size:11px; padding:9px; margin-top:8px; outline:none;
+}
+
+/* ── CRITICAL CARDS (dashboard) ── */
+.crit-list { padding:0 10px; display:flex; flex-direction:column; gap:6px; }
+.crit-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-left:3px solid var(--red);
+  border-radius:7px; padding:11px 12px;
+}
+.crit-card.amber { border-left-color:var(--amber); }
+.crit-title { font-size:13px; font-weight:600; color:var(--text); }
+.crit-sub   { font-size:11px; color:var(--text-dim); margin-top:3px; }
+
+/* ── SPINNER ── */
+.spin { text-align:center; padding:32px; color:var(--text-dim); font-size:12px; }
+.spin::before {
+  content:''; display:block; width:26px; height:26px;
+  border:2px solid var(--border); border-top-color:var(--od-bright);
+  border-radius:50%; animation:sp .7s linear infinite; margin:0 auto 10px;
+}
+@keyframes sp { to{transform:rotate(360deg)} }
+
+/* ── FILTER TABS ── */
+.filter-tabs {
+  display:flex; gap:6px; padding:0 10px 10px;
+  overflow-x:auto; scrollbar-width:none;
+}
+.filter-tabs::-webkit-scrollbar { display:none; }
+.ftab {
+  flex-shrink:0; padding:5px 13px; border-radius:20px;
+  font-size:11px; font-weight:600;
+  border:1px solid var(--border2); background:var(--surface);
+  color:var(--text-dim); cursor:pointer; transition:all .15s;
+  font-family:var(--mono); letter-spacing:.5px;
+}
+.ftab.active { background:var(--od-dim); color:var(--od-bright); border-color:var(--od); }
+.ftab.red.active { background:#2E0D0D; color:#FF6B6B; border-color:var(--red); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div class="hdr-left">
+    <div class="hdr-unit" id="unit-name">UNIT OPS</div>
+    <div class="hdr-sub" id="hdr-sub">TACTICAL TRACKER</div>
+  </div>
+  <div class="hdr-right">
+    <button id="sync-btn" onclick="fetchData()">↻ SYNC</button>
+    <div id="zulu">--:--Z</div>
+  </div>
+</div>
+
+<!-- READINESS -->
+<div id="rstrip">
+  <div class="rstrip-label">READINESS</div>
+  <div id="r-track"><div id="r-fill"></div></div>
+  <div id="r-pct">--%</div>
+</div>
+
+<!-- SCROLL AREA -->
+<div id="scroller">
+
+  <!-- ── DASHBOARD ── -->
+  <div class="view active" id="view-dash">
+    <div class="slabel">Unit Status</div>
+    <div class="stat-row cols4">
+      <div class="sbox"><div class="sval g" id="d-pres">--</div><div class="slbl">Present</div></div>
+      <div class="sbox"><div class="sval r" id="d-abs">--</div><div class="slbl">Absent</div></div>
+      <div class="sbox"><div class="sval b" id="d-fmc">--</div><div class="slbl">FMC</div></div>
+      <div class="sbox"><div class="sval a" id="d-tasks">--</div><div class="slbl">Tasks</div></div>
+    </div>
+    <div class="slabel">Critical</div>
+    <div class="crit-list" id="d-crit"><div class="spin"></div></div>
+    <div class="slabel">Elements Out</div>
+    <div class="crit-list" id="d-out"><div class="spin"></div></div>
+    <div id="setup-banner">
+      <h3>⚠ Connect to Google Sheets</h3>
+      <p>Paste your Apps Script Web App URL to sync live data.</p>
+      <input id="url-input" placeholder="https://script.google.com/macros/s/.../exec">
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-p" style="flex:1" onclick="saveUrl()">Connect</button>
+        <button class="btn btn-g" style="flex:1" onclick="hideBanner()">Demo Mode</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PERSONNEL ── -->
+  <div class="view" id="view-pax">
+    <div class="slabel">Personnel Accountability</div>
+    <div class="stat-row cols3" style="margin-bottom:8px">
+      <div class="sbox"><div class="sval g" id="p-pres">--</div><div class="slbl">Present</div></div>
+      <div class="sbox"><div class="sval r" id="p-abs">--</div><div class="slbl">Absent</div></div>
+      <div class="sbox"><div class="sval a" id="p-other">--</div><div class="slbl">Other</div></div>
+    </div>
+    <div class="filter-tabs">
+      <div class="ftab active" data-f="all"     onclick="setPaxFilter(this)">ALL</div>
+      <div class="ftab red"   data-f="Absent"   onclick="setPaxFilter(this)">ABSENT</div>
+      <div class="ftab"       data-f="Present"  onclick="setPaxFilter(this)">PRESENT</div>
+      <div class="ftab"       data-f="Medical"  onclick="setPaxFilter(this)">MEDICAL</div>
+      <div class="ftab"       data-f="TDY"      onclick="setPaxFilter(this)">TDY</div>
+    </div>
+    <div class="roster" id="pax-list"><div class="spin"></div></div>
+  </div>
+
+  <!-- ── VEHICLES ── -->
+  <div class="view" id="view-veh">
+    <div class="slabel">Vehicle Status</div>
+    <div class="stat-row cols3" style="margin-bottom:8px">
+      <div class="sbox"><div class="sval g" id="v-fmc">--</div><div class="slbl">FMC</div></div>
+      <div class="sbox"><div class="sval r" id="v-nmc">--</div><div class="slbl">NMC</div></div>
+      <div class="sbox"><div class="sval b" id="v-disp">--</div><div class="slbl">Dispatched</div></div>
+    </div>
+    <div class="roster" id="veh-list"><div class="spin"></div></div>
+  </div>
+
+  <!-- ── TASKS ── -->
+  <div class="view" id="view-tasks">
+    <div class="slabel">Tasks</div>
+    <div class="filter-tabs">
+      <div class="ftab active" data-f="all"         onclick="setTaskFilter(this)">ALL</div>
+      <div class="ftab red"   data-f="1-URGENT"     onclick="setTaskFilter(this)">URGENT</div>
+      <div class="ftab"       data-f="In Progress"  onclick="setTaskFilter(this)">IN PROG</div>
+      <div class="ftab"       data-f="Not Started"  onclick="setTaskFilter(this)">OPEN</div>
+      <div class="ftab"       data-f="Complete"     onclick="setTaskFilter(this)">DONE</div>
+    </div>
+    <div class="roster" id="task-list"><div class="spin"></div></div>
+  </div>
+
+  <!-- ── CALENDAR ── -->
+  <div class="view" id="view-cal">
+    <div class="slabel">Operations Schedule</div>
+    <div class="day-scroll" id="day-scroll"></div>
+    <div class="hour-list" id="hour-list"></div>
+  </div>
+
+</div><!-- /scroller -->
+
+<!-- BOTTOM NAV -->
+<nav id="nav">
+  <button class="nb active" onclick="nav('dash',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Dash</span>
+  </button>
+  <button class="nb" onclick="nav('pax',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.87"/></svg>
+    <span>Roster</span>
+  </button>
+  <button class="nb" onclick="nav('veh',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 12h14"/></svg>
+    <span>Vehicles</span>
+  </button>
+  <button class="nb" onclick="nav('tasks',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    <span>Tasks</span>
+  </button>
+  <button class="nb" onclick="nav('cal',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    <span>Schedule</span>
+  </button>
+</nav>
+
+<!-- FAB -->
+<button id="fab" onclick="openAdd()">
+  <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- ════ SOLDIER DETAIL OVERLAY ════ -->
+<div id="detail-overlay">
+  <div id="detail-hdr">
+    <div id="detail-back" onclick="closeDetail()">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </div>
+    <div id="detail-title-block">
+      <div id="detail-name">—</div>
+      <div id="detail-rank">—</div>
+    </div>
+    <div id="detail-badge"></div>
+  </div>
+  <div id="detail-body">
+    <!-- injected by JS -->
+  </div>
+</div>
+
+<!-- ════ DRAWER ════ -->
+<div id="drawer-overlay" onclick="closeDrawer(event)">
+  <div id="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title" id="drawer-title">ADD ENTRY</div>
+    <div id="drawer-body"></div>
+    <div class="drawer-btns">
+      <button class="btn btn-g" onclick="document.getElementById('drawer-overlay').classList.remove('open')">Cancel</button>
+      <button class="btn btn-p" onclick="submitDrawer()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════════════════════════════
+const URL_KEY = 'unit_ops_url';
+let SHEET_URL = localStorage.getItem(URL_KEY) || '';
+let DATA = { personnel:[], vehicles:[], locations:[], tasks:[], calendar:{} };
+let currentView = 'dash';
+let paxFilter   = 'all';
+let taskFilter  = 'all';
+let calDay      = 0;
+let detailType  = null;
+let detailIdx   = null;
+
+const CAL_START = new Date();
+CAL_START.setDate(CAL_START.getDate() + 1);
+CAL_START.setHours(0,0,0,0);
+
+// ── Zulu clock
+setInterval(() => {
+  const n = new Date();
+  document.getElementById('zulu').textContent =
+    String(n.getUTCHours()).padStart(2,'0') + String(n.getUTCMinutes()).padStart(2,'0') + 'Z';
+}, 1000);
+
+// ═══════════════════════════════════════════════════════════
+// DEMO DATA
+// ═══════════════════════════════════════════════════════════
+const DEMO = {
+  personnel: [
+    {name:'MAYFIELD',    rank:'SFC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'MATTINGLY',   rank:'SFC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'BRANDON',     rank:'SFC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'PARKER',      rank:'LT',  section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'SMITH, J.',   rank:'SSG', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'NELSON',      rank:'SGT', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'BASS',        rank:'SGT', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'TERCERO',     rank:'SPC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'LUNA',        rank:'SPC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'BROWN, K.',   rank:'SPC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'BROWN, L.',   rank:'SPC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'JORDAN',      rank:'SPC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'ARNOLD',      rank:'SPC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'MCKENZIE',    rank:'SPC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'MCKENZIE',    rank:'SPC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'ESCORZA',     rank:'SPC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+    {name:'STANLEY',     rank:'PFC', section:'', status:'Present', location:'', vehicle:'', task:'', updated:'', notes:''},
+  ],
+  vehicles: [
+    {bumper:'A211', type:'', status:'FMC', location:'', driver:'', fuel:'', mileage:'', notes:''},
+    {bumper:'804E', type:'', status:'FMC', location:'', driver:'', fuel:'', mileage:'', notes:''},
+    {bumper:'A111', type:'', status:'FMC', location:'', driver:'', fuel:'', mileage:'', notes:''},
+    {bumper:'A232', type:'', status:'FMC', location:'', driver:'', fuel:'', mileage:'', notes:''},
+    {bumper:'804D', type:'', status:'FMC', location:'', driver:'', fuel:'', mileage:'', notes:''},
+  ],
+  locations: [],
+  tasks: [],
+  calendar: {
+    '0': {'0500':'PT Formation — All personnel, parade field','0600':'Chow','0700':'Motor Pool PMCS begins','0800':'Range Detail departs — Alpha Team, A-12','1000':'CDR Update Brief — TOC','1600':'Alpha Team returns','1700':'EOD Formation'}
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════
+async function fetchData() {
+  if (!SHEET_URL) { DATA = {...DEMO}; renderAll(); document.getElementById('setup-banner').style.display='block'; return; }
+  document.getElementById('sync-btn').textContent = '...';
+  try {
+    const r = await fetch(SHEET_URL + '?action=getData', {cache:'no-store'});
+    DATA = await r.json();
+    document.getElementById('setup-banner').style.display = 'none';
+  } catch(e) { DATA = {...DEMO}; }
+  document.getElementById('sync-btn').textContent = '↻ SYNC';
+  renderAll();
+}
+
+async function push(payload) {
+  if (!SHEET_URL) return;
+  try { await fetch(SHEET_URL, {method:'POST', body:JSON.stringify(payload)}); } catch(e){}
+}
+
+function saveUrl() {
+  const v = document.getElementById('url-input').value.trim();
+  if (!v.startsWith('https://script.google.com')) { alert('Invalid URL'); return; }
+  SHEET_URL = v; localStorage.setItem(URL_KEY, v);
+  hideBanner(); fetchData();
+}
+function hideBanner() { document.getElementById('setup-banner').style.display='none'; }
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function sc(s) {
+  if (!s) return 'x';
+  s = s.toLowerCase();
+  if (s.includes('present')||s.includes('fmc')||s.includes('complete')||s.includes('in place')||s.includes('returned')) return 'g';
+  if (s.includes('absent')||s.includes('nmc')||s.includes('cancel')||s.includes('urgent')) return 'r';
+  if (s.includes('tdy')||s.includes('medical')||s.includes('lmtdu')||s.includes('fuel')||s.includes('hold')||s.includes('route')||s.includes('off post')||s.includes('high')) return 'a';
+  if (s.includes('dispatch')||s.includes('progress')||s.includes('mission')) return 'b';
+  return 'x';
+}
+function badge(text, c) { return `<span class="badge ${c}">${text}</span>`; }
+function initials(name) {
+  const parts = name.replace(',','').trim().split(' ');
+  return parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0,2).toUpperCase();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════
+function renderAll() {
+  renderDash(); renderPax(); renderVeh(); renderTasks(); renderCal();
+}
+
+function renderDash() {
+  const P = DATA.personnel||[], V = DATA.vehicles||[], T = DATA.tasks||[], L = DATA.locations||[];
+  const pres = P.filter(p=>p.status==='Present').length;
+  const abs  = P.filter(p=>p.status==='Absent').length;
+  const fmc  = V.filter(v=>v.status==='FMC').length;
+  const act  = T.filter(t=>t.status==='In Progress').length;
+
+  document.getElementById('d-pres').textContent  = pres;
+  document.getElementById('d-abs').textContent   = abs;
+  document.getElementById('d-fmc').textContent   = fmc;
+  document.getElementById('d-tasks').textContent = act;
+
+  const pct = P.length ? Math.round(pres/P.length*100) : 0;
+  const fill = document.getElementById('r-fill'), pctEl = document.getElementById('r-pct');
+  fill.style.width = pct+'%';
+  fill.className = pct>=80?'':pct>=60?'warn':'crit';
+  pctEl.textContent = pct+'%';
+  pctEl.style.color = pct>=80?'var(--od-bright)':pct>=60?'var(--amber)':'var(--red)';
+
+  // Critical
+  const crits = [
+    ...P.filter(p=>p.status==='Absent').map(p=>({t:p.name,s:`${p.rank} — ABSENT`,c:'r'})),
+    ...V.filter(v=>v.status&&v.status.startsWith('NMC')).map(v=>({t:v.bumper,s:`${v.type} — ${v.status}`,c:'r'})),
+    ...T.filter(t=>t.priority==='1-URGENT'&&t.status!=='Complete').map(t=>({t:t.task,s:`URGENT — ${t.status}`,c:'r'})),
+  ];
+  document.getElementById('d-crit').innerHTML = crits.length
+    ? crits.map(c=>`<div class="crit-card ${c.c==='a'?'amber':''}"><div class="crit-title">${c.t}</div><div class="crit-sub">${c.s}</div></div>`).join('')
+    : `<div class="empty">✓ No critical items</div>`;
+
+  const out = L.filter(l=>l.status!=='In Place'&&l.status!=='Returned');
+  document.getElementById('d-out').innerHTML = out.length
+    ? out.map(l=>`<div class="crit-card amber"><div class="crit-title">${l.element}</div><div class="crit-sub">${l.status} — ${l.location}${l.eta?' · ETA '+l.eta:''}</div></div>`).join('')
+    : `<div class="empty">No elements currently out</div>`;
+}
+
+function renderPax(filter) {
+  filter = filter || paxFilter;
+  const P = DATA.personnel||[];
+  document.getElementById('p-pres').textContent  = P.filter(p=>p.status==='Present').length;
+  document.getElementById('p-abs').textContent   = P.filter(p=>p.status==='Absent').length;
+  document.getElementById('p-other').textContent = P.filter(p=>p.status!=='Present'&&p.status!=='Absent').length;
+
+  const list = filter==='all' ? P : P.filter(p=>p.status===filter);
+  document.getElementById('pax-list').innerHTML = list.length===0
+    ? `<div class="empty">No personnel in this filter</div>`
+    : list.map((p,i)=>{
+        const orig = DATA.personnel.indexOf(p);
+        const c = sc(p.status);
+        return `<div class="soldier-row" onclick="openSoldier(${orig})">
+          <div class="soldier-indicator ind-${c}"></div>
+          <div class="soldier-avatar">${initials(p.name)}</div>
+          <div class="soldier-main">
+            <div class="soldier-name">${p.name}</div>
+            <div class="soldier-sub">${p.rank} · ${p.section||'—'}${p.location?' · '+p.location:''}</div>
+          </div>
+          <div class="soldier-right">
+            ${badge(p.status||'?', c)}
+            <span class="chevron">›</span>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+function renderVeh() {
+  const V = DATA.vehicles||[];
+  document.getElementById('v-fmc').textContent  = V.filter(v=>v.status==='FMC').length;
+  document.getElementById('v-nmc').textContent  = V.filter(v=>v.status&&v.status.startsWith('NMC')).length;
+  document.getElementById('v-disp').textContent = V.filter(v=>v.status==='Dispatched').length;
+
+  const icons = {'M1151':'🚙','M35A2':'🚛','M915':'🚚','HMMWV':'🚙'};
+  function vIcon(type) { for(const [k,v] of Object.entries(icons)) if(type.includes(k)) return v; return '🚗'; }
+
+  document.getElementById('veh-list').innerHTML = V.length===0
+    ? `<div class="empty">No vehicles entered yet</div>`
+    : V.map((v,i)=>{
+        const c = sc(v.status);
+        return `<div class="veh-row" onclick="openVehicle(${i})">
+          <div class="soldier-indicator ind-${c}"></div>
+          <div class="veh-icon">${vIcon(v.type)}</div>
+          <div class="veh-main">
+            <div class="veh-bumper">${v.bumper} — ${v.type}</div>
+            <div class="veh-type">${v.driver ? 'Driver: '+v.driver : 'No driver assigned'}</div>
+            <div class="veh-meta">Fuel: ${v.fuel||'—'} · ${v.location||'—'}</div>
+          </div>
+          <div class="soldier-right">
+            ${badge(v.status||'?', c)}
+            <span class="chevron">›</span>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+function renderTasks(filter) {
+  filter = filter || taskFilter;
+  let T = DATA.tasks||[];
+  if (filter==='1-URGENT')    T = T.filter(t=>t.priority==='1-URGENT');
+  else if (filter!=='all')    T = T.filter(t=>t.status===filter);
+  document.getElementById('task-list').innerHTML = T.length===0
+    ? `<div class="empty">No tasks in this filter</div>`
+    : T.map((t,i)=>{
+        const orig = DATA.tasks.indexOf(t);
+        const c = sc(t.status), cp = sc(t.priority);
+        return `<div class="task-row" onclick="openTask(${orig})">
+          <div class="soldier-indicator ind-${cp}"></div>
+          <div class="task-title">${t.task}</div>
+          <div class="task-meta">${t.assigned||'Unassigned'} · ${t.section||'—'}${t.location?' · '+t.location:''}</div>
+          <div class="task-footer">
+            ${badge(t.status||'?', c)}
+            ${t.priority==='1-URGENT'?badge('⚡ URGENT','r'):''}
+            <span class="chevron" style="margin-left:auto">›</span>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+function renderCal() {
+  const sel = document.getElementById('day-scroll');
+  sel.innerHTML='';
+  for(let i=0;i<14;i++) {
+    const d=new Date(CAL_START); d.setDate(d.getDate()+i);
+    const dow=['SUN','MON','TUE','WED','THU','FRI','SAT'][d.getDay()];
+    const p=document.createElement('div');
+    p.className='day-pill'+(i===calDay?' active':'');
+    p.innerHTML=`<div class="dp-dow">${dow}</div><div class="dp-dom">${d.getDate()}</div>`;
+    p.onclick=()=>{calDay=i;renderCal();};
+    sel.appendChild(p);
+  }
+  const cal=(DATA.calendar||{})[String(calDay)]||{};
+  const list=document.getElementById('hour-list');
+  list.innerHTML='';
+  for(let h=0;h<24;h++) {
+    const key=String(h).padStart(2,'0')+'00';
+    const ev=cal[key]||'';
+    const cls=h<5?'night':h>=17?'eve':'day';
+    const hasEv=!!ev;
+    const row=document.createElement('div');
+    row.className=`hour-row ${cls}${hasEv?' hour-has':''}`;
+    row.innerHTML=`<div class="hour-time">${key}</div><div class="hour-content${!hasEv?' hour-empty':''}"><div class="hour-event">${ev||(h<5?'':' — ')}</div></div>`;
+    row.onclick=()=>openHourEdit(h,key,ev);
+    list.appendChild(row);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAIL — SOLDIER
+// ═══════════════════════════════════════════════════════════
+function openSoldier(idx) {
+  const p = DATA.personnel[idx];
+  detailType='pax'; detailIdx=idx;
+
+  document.getElementById('detail-name').textContent = p.name;
+  document.getElementById('detail-rank').textContent = `${p.rank} · ${p.section||'—'}`;
+  document.getElementById('detail-badge').innerHTML  = badge(p.status||'?', sc(p.status));
+
+  const statuses = ['Present','Absent','TDY','Medical','LMTDU','On Leave','Unknown'];
+  const c=sc(p.status);
+
+  document.getElementById('detail-body').innerHTML = `
+    <!-- STATUS SELECTOR -->
+    <div class="slabel">Status</div>
+    <div class="status-grid" id="status-grid">
+      ${statuses.map(s=>`<div class="status-pill${p.status===s?' selected-'+sc(s):''}" data-status="${s}" onclick="setSoldierStatus(this,'${s}',${idx})">${s}</div>`).join('')}
+    </div>
+
+    <!-- DETAILS -->
+    <div class="detail-section">
+      <div class="detail-section-title">Personnel Details</div>
+      <div class="field-group">
+        <div class="field-row"><span class="field-label">Location</span><input class="field-input" id="df-location" value="${p.location||''}" placeholder="Current location"></div>
+        <div class="field-row"><span class="field-label">Vehicle</span><input class="field-input" id="df-vehicle" value="${p.vehicle||''}" placeholder="Assigned vehicle"></div>
+        <div class="field-row"><span class="field-label">Task</span><input class="field-input" id="df-task" value="${p.task||''}" placeholder="Assigned task"></div>
+        <div class="field-row"><span class="field-label">Updated</span><span class="field-val" style="font-family:var(--mono);font-size:12px;color:var(--text-dim)">${p.updated||'—'}</span></div>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="detail-section">
+      <div class="detail-section-title">Notes</div>
+      <div style="padding:10px 14px">
+        <textarea id="df-notes" style="width:100%;background:none;border:none;color:var(--text);font-size:14px;font-family:inherit;outline:none;resize:none;min-height:80px" placeholder="Add notes...">${p.notes||''}</textarea>
+      </div>
+    </div>
+
+    <button id="detail-save" onclick="saveSoldier(${idx})">Save Changes</button>
+  `;
+
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function setSoldierStatus(el, status, idx) {
+  document.querySelectorAll('#status-grid .status-pill').forEach(p=>p.className='status-pill');
+  el.className=`status-pill selected-${sc(status)}`;
+  DATA.personnel[idx].status=status;
+  document.getElementById('detail-badge').innerHTML=badge(status,sc(status));
+}
+
+function saveSoldier(idx) {
+  const p = DATA.personnel[idx];
+  p.location = document.getElementById('df-location').value;
+  p.vehicle  = document.getElementById('df-vehicle').value;
+  p.task     = document.getElementById('df-task').value;
+  p.notes    = document.getElementById('df-notes').value;
+  p.updated  = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+
+  push({action:'updateRow', sheet:'personnel', rowIndex:p._row, data:p});
+  closeDetail();
+  renderPax(); renderDash();
+
+  // flash confirm
+  const btn=document.getElementById('detail-save');
+  if(btn){btn.textContent='✓ Saved';btn.style.background='var(--od-bright)';btn.style.color='#000';}
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAIL — VEHICLE
+// ═══════════════════════════════════════════════════════════
+function openVehicle(idx) {
+  const v = DATA.vehicles[idx];
+  detailType='veh'; detailIdx=idx;
+
+  document.getElementById('detail-name').textContent = `${v.bumper} — ${v.type}`;
+  document.getElementById('detail-rank').textContent = v.driver||'No driver assigned';
+  document.getElementById('detail-badge').innerHTML  = badge(v.status||'?', sc(v.status));
+
+  const vstats = ['FMC','NMC-Maintenance','NMC-Fuel','Dispatched','In Motor Pool'];
+  document.getElementById('detail-body').innerHTML = `
+    <div class="slabel">Status</div>
+    <div class="status-grid" id="status-grid">
+      ${vstats.map(s=>`<div class="status-pill${v.status===s?' selected-'+sc(s):''}" data-status="${s}" onclick="setVehStatus(this,'${s}',${idx})">${s.replace('NMC-','NMC\n')}</div>`).join('')}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Vehicle Details</div>
+      <div class="field-group">
+        <div class="field-row"><span class="field-label">Location</span><input class="field-input" id="df-vloc" value="${v.location||''}" placeholder="Current location"></div>
+        <div class="field-row"><span class="field-label">Driver</span><input class="field-input" id="df-driver" value="${v.driver||''}" placeholder="Assigned driver"></div>
+        <div class="field-row"><span class="field-label">Fuel</span>
+          <select id="df-fuel" style="background:none;border:none;color:var(--text);font-size:14px;flex:1;outline:none">
+            ${['Full','3/4','1/2','1/4','Empty'].map(f=>`<option${v.fuel===f?' selected':''}>${f}</option>`).join('')}
+          </select></div>
+        <div class="field-row"><span class="field-label">Mileage</span><input class="field-input" id="df-miles" value="${v.mileage||''}" placeholder="Current mileage/hours"></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Notes</div>
+      <div style="padding:10px 14px">
+        <textarea id="df-vnotes" style="width:100%;background:none;border:none;color:var(--text);font-size:14px;font-family:inherit;outline:none;resize:none;min-height:80px" placeholder="Maintenance notes, issues...">${v.notes||''}</textarea>
+      </div>
+    </div>
+    <button id="detail-save" onclick="saveVehicle(${idx})">Save Changes</button>
+  `;
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function setVehStatus(el, status, idx) {
+  document.querySelectorAll('#status-grid .status-pill').forEach(p=>p.className='status-pill');
+  el.className=`status-pill selected-${sc(status)}`;
+  DATA.vehicles[idx].status=status;
+  document.getElementById('detail-badge').innerHTML=badge(status,sc(status));
+}
+
+function saveVehicle(idx) {
+  const v=DATA.vehicles[idx];
+  v.location=document.getElementById('df-vloc').value;
+  v.driver  =document.getElementById('df-driver').value;
+  v.fuel    =document.getElementById('df-fuel').value;
+  v.mileage =document.getElementById('df-miles').value;
+  v.notes   =document.getElementById('df-vnotes').value;
+  push({action:'updateRow',sheet:'vehicles',rowIndex:v._row,data:v});
+  closeDetail(); renderVeh(); renderDash();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAIL — TASK
+// ═══════════════════════════════════════════════════════════
+function openTask(idx) {
+  const t=DATA.tasks[idx];
+  detailType='task'; detailIdx=idx;
+
+  document.getElementById('detail-name').textContent = t.task;
+  document.getElementById('detail-rank').textContent = `${t.assigned||'Unassigned'} · ${t.section||'—'}`;
+  document.getElementById('detail-badge').innerHTML  = badge(t.status||'?',sc(t.status));
+
+  const tstats=['Not Started','In Progress','On Hold','Complete','Cancelled'];
+  const pris  =['1-URGENT','2-HIGH','3-MEDIUM','4-LOW'];
+  document.getElementById('detail-body').innerHTML=`
+    <div class="slabel">Status</div>
+    <div class="status-grid" id="status-grid">
+      ${tstats.map(s=>`<div class="status-pill${t.status===s?' selected-'+sc(s):''}" onclick="setTaskStatus(this,'${s}',${idx})">${s}</div>`).join('')}
+    </div>
+    <div class="slabel">Priority</div>
+    <div class="status-grid" id="pri-grid">
+      ${pris.map(s=>`<div class="status-pill${t.priority===s?' selected-'+sc(s):''}" onclick="setTaskPri(this,'${s}',${idx})">${s}</div>`).join('')}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Task Details</div>
+      <div class="field-group">
+        <div class="field-row"><span class="field-label">Assigned</span><input class="field-input" id="df-ta" value="${t.assigned||''}" placeholder="Who owns this"></div>
+        <div class="field-row"><span class="field-label">Location</span><input class="field-input" id="df-tl" value="${t.location||''}" placeholder="Where"></div>
+        <div class="field-row"><span class="field-label">Section</span><input class="field-input" id="df-ts" value="${t.section||''}" placeholder="Section/element"></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Notes</div>
+      <div style="padding:10px 14px">
+        <textarea id="df-tn" style="width:100%;background:none;border:none;color:var(--text);font-size:14px;font-family:inherit;outline:none;resize:none;min-height:80px">${t.notes||''}</textarea>
+      </div>
+    </div>
+    <button id="detail-save" onclick="saveTask(${idx})">Save Changes</button>
+  `;
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function setTaskStatus(el,s,idx) {
+  document.querySelectorAll('#status-grid .status-pill').forEach(p=>p.className='status-pill');
+  el.className=`status-pill selected-${sc(s)}`;
+  DATA.tasks[idx].status=s;
+  document.getElementById('detail-badge').innerHTML=badge(s,sc(s));
+}
+function setTaskPri(el,s,idx) {
+  document.querySelectorAll('#pri-grid .status-pill').forEach(p=>p.className='status-pill');
+  el.className=`status-pill selected-${sc(s)}`;
+  DATA.tasks[idx].priority=s;
+}
+function saveTask(idx) {
+  const t=DATA.tasks[idx];
+  t.assigned=document.getElementById('df-ta').value;
+  t.location=document.getElementById('df-tl').value;
+  t.section =document.getElementById('df-ts').value;
+  t.notes   =document.getElementById('df-tn').value;
+  push({action:'updateRow',sheet:'tasks',rowIndex:t._row,data:t});
+  closeDetail(); renderTasks(); renderDash();
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  document.getElementById('scroller').scrollTop=0;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CALENDAR HOUR EDIT
+// ═══════════════════════════════════════════════════════════
+function openHourEdit(h, key, existing) {
+  const d=new Date(CAL_START); d.setDate(d.getDate()+calDay);
+  document.getElementById('drawer-title').textContent=`${key} — ${d.toDateString().toUpperCase()}`;
+  document.getElementById('drawer-body').innerHTML=`
+    <div class="drawer-field"><label>Event / Activity</label><input id="mf-ev" value="${existing}" placeholder="What's happening?"></div>
+    <div class="drawer-field"><label>Personnel</label><input id="mf-px" placeholder="Who's involved?"></div>
+    <div class="drawer-field"><label>Vehicle</label><input id="mf-vh" placeholder="Bumper # if applicable"></div>
+    <div class="drawer-field"><label>Equipment</label><input id="mf-eq" placeholder="Equipment / items"></div>
+    <div class="drawer-field"><label>Notes</label><textarea id="mf-nt" placeholder="Additional notes"></textarea></div>
+  `;
+  window._drawerMode={type:'hour', day:calDay, key};
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADD DRAWER
+// ═══════════════════════════════════════════════════════════
+function openAdd() {
+  if(currentView==='cal'){openHourEdit(new Date().getHours(),String(new Date().getHours()).padStart(2,'0')+'00','');return;}
+  const forms={
+    pax:   ()=>`<div class="drawer-field"><label>Last Name, First</label><input id="mf-name" placeholder="SMITH, J"></div><div class="drawer-field"><label>Rank</label><input id="mf-rank" placeholder="SGT"></div><div class="drawer-field"><label>Section</label><input id="mf-sec" placeholder="1PLT"></div><div class="drawer-field"><label>Status</label><select id="mf-stat"><option>Present</option><option>Absent</option><option>TDY</option><option>Medical</option><option>LMTDU</option><option>On Leave</option></select></div><div class="drawer-field"><label>Location</label><input id="mf-loc" placeholder="Where are they now?"></div>`,
+    veh:   ()=>`<div class="drawer-field"><label>Bumper #</label><input id="mf-bumper" placeholder="A-11"></div><div class="drawer-field"><label>Type</label><input id="mf-vtype" placeholder="M1151 HMMWV"></div><div class="drawer-field"><label>Status</label><select id="mf-vstat"><option>FMC</option><option>NMC-Maintenance</option><option>NMC-Fuel</option><option>Dispatched</option><option>In Motor Pool</option></select></div><div class="drawer-field"><label>Driver</label><input id="mf-drv" placeholder="Name"></div><div class="drawer-field"><label>Fuel</label><select id="mf-fuel"><option>Full</option><option>3/4</option><option>1/2</option><option>1/4</option><option>Empty</option></select></div>`,
+    tasks: ()=>`<div class="drawer-field"><label>Task</label><input id="mf-task" placeholder="What needs to be done?"></div><div class="drawer-field"><label>Priority</label><select id="mf-pri"><option>1-URGENT</option><option>2-HIGH</option><option>3-MEDIUM</option><option>4-LOW</option></select></div><div class="drawer-field"><label>Assigned To</label><input id="mf-asgn" placeholder="Name or element"></div><div class="drawer-field"><label>Status</label><select id="mf-tstat"><option>Not Started</option><option>In Progress</option><option>On Hold</option><option>Complete</option></select></div><div class="drawer-field"><label>Location</label><input id="mf-tloc" placeholder="Where?"></div>`,
+    dash:  ()=>`<div class="drawer-field"><label>Last Name, First</label><input id="mf-name" placeholder="SMITH, J"></div><div class="drawer-field"><label>Rank</label><input id="mf-rank" placeholder="SGT"></div><div class="drawer-field"><label>Section</label><input id="mf-sec" placeholder="1PLT"></div><div class="drawer-field"><label>Status</label><select id="mf-stat"><option>Present</option><option>Absent</option><option>TDY</option><option>Medical</option><option>LMTDU</option></select></div>`,
+  };
+  const titles={pax:'ADD SOLDIER',veh:'ADD VEHICLE',tasks:'ADD TASK',dash:'ADD SOLDIER'};
+  document.getElementById('drawer-title').textContent=titles[currentView]||'ADD ENTRY';
+  document.getElementById('drawer-body').innerHTML=(forms[currentView]||forms.pax)();
+  window._drawerMode={type:currentView==='dash'?'pax':currentView};
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+
+function submitDrawer() {
+  const m=window._drawerMode||{};
+  const g=id=>{const e=document.getElementById(id);return e?e.value:''};
+  const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+
+  if(m.type==='hour') {
+    if(!DATA.calendar) DATA.calendar={};
+    if(!DATA.calendar[m.day]) DATA.calendar[m.day]={};
+    const ev=g('mf-ev');
+    const extras=[g('mf-px'),g('mf-vh'),g('mf-eq'),g('mf-nt')].filter(Boolean).join(' · ');
+    DATA.calendar[m.day][m.key]=ev+(extras?' — '+extras:'');
+    push({action:'updateCalendar',dayOffset:m.day,hourKey:m.key,value:DATA.calendar[m.day][m.key]});
+    renderCal();
+  } else if(m.type==='pax') {
+    const rec={name:g('mf-name'),rank:g('mf-rank'),section:g('mf-sec'),status:g('mf-stat'),location:g('mf-loc'),updated:ts,notes:''};
+    DATA.personnel.push(rec);
+    push({action:'addRow',sheet:'personnel',data:rec});
+    renderPax(); renderDash();
+  } else if(m.type==='veh') {
+    const rec={bumper:g('mf-bumper'),type:g('mf-vtype'),status:g('mf-vstat'),driver:g('mf-drv'),fuel:g('mf-fuel'),location:'',notes:''};
+    DATA.vehicles.push(rec);
+    push({action:'addRow',sheet:'vehicles',data:rec});
+    renderVeh(); renderDash();
+  } else if(m.type==='tasks') {
+    const rec={task:g('mf-task'),priority:g('mf-pri'),assigned:g('mf-asgn'),status:g('mf-tstat'),location:g('mf-tloc'),section:'',notes:''};
+    DATA.tasks.push(rec);
+    push({action:'addRow',sheet:'tasks',data:rec});
+    renderTasks(); renderDash();
+  }
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+function closeDrawer(e) {
+  if(e.target===document.getElementById('drawer-overlay'))
+    document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════════════════════
+function setPaxFilter(el) {
+  document.querySelectorAll('#view-pax .ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  paxFilter=el.dataset.f;
+  renderPax(paxFilter);
+}
+function setTaskFilter(el) {
+  document.querySelectorAll('#view-tasks .ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  taskFilter=el.dataset.f;
+  renderTasks(taskFilter);
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function nav(name, btn) {
+  currentView=name;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('scroller').scrollTop=0;
+}
+
+// ── INIT
+fetchData();
+</script>
+</body>
+</html>
