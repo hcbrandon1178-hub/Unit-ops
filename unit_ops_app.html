@@ -1284,7 +1284,18 @@ function selectLocation(loc) {
 // VEHICLE PICKER
 // ═══════════════════════════════════════════════════════════
 const VEH_KEY = 'unit_ops_vehicles_list';
-let savedVehicles = JSON.parse(localStorage.getItem(VEH_KEY) || '["A211","804E","A111","A232","804D"]');
+const DEFAULT_VEHICLES = ["A211","804E","A111","A232","804D"];
+let savedVehicles = (() => {
+  const stored = localStorage.getItem(VEH_KEY);
+  if (!stored) {
+    localStorage.setItem(VEH_KEY, JSON.stringify(DEFAULT_VEHICLES));
+    return [...DEFAULT_VEHICLES];
+  }
+  const parsed = JSON.parse(stored);
+  DEFAULT_VEHICLES.forEach(v => { if (!parsed.includes(v)) parsed.push(v); });
+  localStorage.setItem(VEH_KEY, JSON.stringify(parsed));
+  return parsed;
+})();
 let vehPickerCallback = null;
 
 function openVehPicker(callback) {
