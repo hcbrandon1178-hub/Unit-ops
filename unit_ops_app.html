@@ -523,9 +523,47 @@ const DEMO = {
   ],
   locations:[],tasks:[],
   ammo:[
-    {dodic:'A059',type:'5.56mm Ball M855',cases:'10',rpc:'1200',wtpc:'27',location:'Ammo Point Alpha',notes:''},
-    {dodic:'A064',type:'5.56mm Tracer M856',cases:'4',rpc:'900',wtpc:'24',location:'Ammo Point Alpha',notes:''},
-    {dodic:'A576',type:'9mm Ball M882',cases:'6',rpc:'1000',wtpc:'30',location:'Arms Room',notes:''},
+    {dodic:'A011', type:'12 Gauge Shotgun',            rounds:'712',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'A111', type:'7.62mm Blank Linked',          rounds:'20000', cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'A557', type:'.50 Cal Cartridge Linked',     rounds:'12164', cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'AA11', type:'7.62mm Long Range Ball',       rounds:'590',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'AB73', type:'5.56mm Linked',                rounds:'19200', cases:'', rpc:'', wtpc:'', location:'', notes:'Live back: +3200'},
+    {dodic:'A063', type:'5.56mm Cartridge Tracer',      rounds:'2272',  cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'AB57', type:'5.56mm Ball',                  rounds:'68880', cases:'', rpc:'', wtpc:'', location:'', notes:'Live back: +15120'},
+    {dodic:'AB86', type:'7.62mm Linked',                rounds:'22600', cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'AC20', type:'AC20',                         rounds:'2350',  cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'BA30', type:'40mm Training Mixed Belt',     rounds:'9760',  cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'A075', type:'5.56mm Blank Linked',          rounds:'18400', cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'A080', type:'5.56mm Blank Cartridge',       rounds:'2272',  cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'A358', type:'9mm Cartridge',                rounds:'250',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'A598', type:'.50 Cal Blank Linked',         rounds:'2500',  cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'B535', type:'40mm White Star Parachute',    rounds:'270',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'B646', type:'60mm White Phosphorus Smoke',  rounds:'64',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'BA45', type:'60mm Mortar',                  rounds:'50',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'B519', type:'40mm Practice Cartridge',      rounds:'711',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'C625', type:'120mm VL Illuminating',        rounds:'7',     cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'C870', type:'81mm Red Smoke',               rounds:'26',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'C875', type:'81mm Full Range Practice',     rounds:'63',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'CA03', type:'120mm White Phosphorus Smoke', rounds:'186',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'CA09', type:'120mm Full Range Practice',    rounds:'643',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'CA30', type:'84mm Cartridge and Launcher BDM', rounds:'75', cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'CA63', type:'81mm Mortar HE',               rounds:'19',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'G881', type:'M67 Hand Grenade',             rounds:'420',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'G940', type:'M18 Green Smoke Grenade',      rounds:'45',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'G945', type:'M18 Yellow Smoke Grenade',     rounds:'45',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'G950', type:'M18 Red Smoke Grenade',        rounds:'27',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'G955', type:'M18 Violet Smoke Grenade',     rounds:'18',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'G982', type:'TA Smoke Practice Grenade',    rounds:'18',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'K143', type:'Claymore Mine',                rounds:'44',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'K511', type:'M8 Smoke Pot Floating Practice', rounds:'5',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'L305', type:'Green Star Cluster',           rounds:'18',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'L306', type:'Red Star Cluster',             rounds:'8',     cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'L307', type:'White Star Cluster',           rounds:'13',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'L312', type:'White Star Parachute',         rounds:'18',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'L314', type:'Green Star Cluster Signal Flare', rounds:'18', cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'L601', type:'M116A1 Hand Grenade Simulator', rounds:'40',   cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'L311', type:'Red Star Parachute Signal Flare', rounds:'18', cases:'', rpc:'', wtpc:'', location:'', notes:''},
+    {dodic:'BA044',type:'60mm White Phosphorus Smoke',  rounds:'23',    cases:'', rpc:'', wtpc:'', location:'', notes:''},
   ],
   calendar:{'0':{'0500':'PT Formation','0600':'Chow','0700':'Motor Pool PMCS','1000':'CDR Brief — TOC','1700':'EOD Formation'}}
 };
@@ -668,24 +706,33 @@ function renderTasks(filter){
 }
 
 // ── AMMO
+function getRounds(a){
+  // prefer direct rounds field; fall back to cases×rpc
+  if(a.rounds&&parseInt(a.rounds)) return parseInt(a.rounds);
+  return (parseInt(a.cases)||0)*(parseInt(a.rpc)||0);
+}
 function renderAmmo(){
   const A=DATA.ammo||[];
+  const totalRounds=A.reduce((s,a)=>s+getRounds(a),0);
   const totalCases=A.reduce((s,a)=>s+(parseInt(a.cases)||0),0);
-  const totalRounds=A.reduce((s,a)=>s+(parseInt(a.cases)||0)*(parseInt(a.rpc)||0),0);
   document.getElementById('a-lots').textContent=A.length;
-  document.getElementById('a-cases').textContent=totalCases;
+  document.getElementById('a-cases').textContent=totalCases||'—';
   document.getElementById('a-rounds').textContent=totalRounds>=1000?(totalRounds/1000).toFixed(1)+'K':totalRounds;
   document.getElementById('ammo-list').innerHTML=A.length===0
     ?`<div class="empty">No ammo entered yet — tap + to add</div>`
     :A.map((a,i)=>{
-      const rds=(parseInt(a.cases)||0)*(parseInt(a.rpc)||0);
+      const rds=getRounds(a);
       const wt=(parseInt(a.cases)||0)*(parseFloat(a.wtpc)||0);
       return`<div class="ammo-row" onclick="openAmmo(${i})">
         <div class="soldier-indicator ind-g"></div>
         <div class="ammo-dodic">${a.dodic||'—'}</div>
         <div class="ammo-type">${a.type||'Unknown Type'}</div>
-        <div class="ammo-meta">Cases: ${a.cases||0} · Rounds: ${rds.toLocaleString()} · ${a.location||'No location'}</div>
-        <div class="ammo-footer"><span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Dunnage: ${wt.toFixed(1)} lbs</span><span class="chevron">›</span></div>
+        <div class="ammo-meta">${rds.toLocaleString()} rounds${a.cases?' · '+a.cases+' cases':''}${a.location?' · '+a.location:''}</div>
+        <div class="ammo-footer">
+          ${wt>0?`<span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Dunnage: ${wt.toFixed(1)} lbs</span>`:`<span style="font-family:var(--mono);font-size:10px;color:var(--border2)">Tap to add case data</span>`}
+          ${a.notes&&a.notes.startsWith('Live back')?`<span style="font-family:var(--mono);font-size:9px;color:var(--od-bright);margin-left:6px">↑ UPDATED</span>`:''}
+          <span class="chevron" style="margin-left:auto">›</span>
+        </div>
       </div>`;
     }).join('');
 }
@@ -890,20 +937,21 @@ function saveTask(idx){
 // ── DETAIL — AMMO
 function openAmmo(idx){
   const a=DATA.ammo[idx];
-  const rds=(parseInt(a.cases)||0)*(parseInt(a.rpc)||0);
+  const rds=getRounds(a);
   const wt=(parseInt(a.cases)||0)*(parseFloat(a.wtpc)||0);
-  document.getElementById('detail-name').innerHTML=`<input id="df-dodic" value="${a.dodic||''}" placeholder="DODIC" style="background:none;border:none;color:var(--od-bright);font-size:17px;font-weight:700;font-family:var(--mono);outline:none;width:100px"> <input id="df-atype" value="${a.type||''}" placeholder="Ammo type" style="background:none;border:none;color:var(--text);font-size:13px;font-weight:600;font-family:inherit;outline:none;flex:1">`;
-  document.getElementById('detail-rank').textContent=`${rds.toLocaleString()} rounds · ${wt.toFixed(1)} lbs dunnage`;
+  document.getElementById('detail-name').innerHTML=`<input id="df-dodic" value="${a.dodic||''}" placeholder="DODIC" style="background:none;border:none;color:var(--od-bright);font-size:17px;font-weight:700;font-family:var(--mono);outline:none;width:110px"><input id="df-atype" value="${a.type||''}" placeholder="Ammo type" style="background:none;border:none;color:var(--text);font-size:13px;font-weight:600;font-family:inherit;outline:none;width:calc(100% - 120px)">`;
+  document.getElementById('detail-rank').textContent=`${rds.toLocaleString()} rounds${wt>0?' · '+wt.toFixed(1)+' lbs dunnage':''}`;
   document.getElementById('detail-badge').innerHTML=badge('AMMO','b');
   document.getElementById('detail-body').innerHTML=`
     <div class="detail-section">
       <div class="detail-section-title">Ammunition Details</div>
       <div class="field-group">
+        <div class="field-row"><span class="field-label">Rounds</span><input class="field-input" id="df-rounds" type="number" value="${a.rounds||''}" placeholder="Total round count" oninput="updateAmmoCalc()"></div>
         <div class="field-row"><span class="field-label">Cases</span><input class="field-input" id="df-cases" type="number" value="${a.cases||''}" placeholder="# of cases" oninput="updateAmmoCalc()"></div>
         <div class="field-row"><span class="field-label">Rnds/Case</span><input class="field-input" id="df-rpc" type="number" value="${a.rpc||''}" placeholder="Rounds per case" oninput="updateAmmoCalc()"></div>
         <div class="field-row"><span class="field-label">Lbs/Case</span><input class="field-input" id="df-wtpc" type="number" step="0.1" value="${a.wtpc||''}" placeholder="Weight per case (lbs)" oninput="updateAmmoCalc()"></div>
         <div class="field-row"><span class="field-label">Total Rnds</span><span class="field-val" id="df-total-rds" style="font-family:var(--mono);color:var(--od-bright)">${rds.toLocaleString()}</span></div>
-        <div class="field-row"><span class="field-label">Dunnage</span><span class="field-val" id="df-total-wt" style="font-family:var(--mono);color:var(--amber)">${wt.toFixed(1)} lbs</span></div>
+        <div class="field-row"><span class="field-label">Dunnage</span><span class="field-val" id="df-total-wt" style="font-family:var(--mono);color:var(--amber)">${wt>0?wt.toFixed(1)+' lbs':'—'}</span></div>
         <div class="field-row"><span class="field-label">Location</span><input class="field-input" id="df-aloc" value="${a.location||''}" placeholder="Where is this ammo?"></div>
       </div>
     </div>
@@ -915,16 +963,19 @@ function openAmmo(idx){
   document.getElementById('detail-overlay').classList.add('open');
 }
 function updateAmmoCalc(){
+  const rounds=parseInt(document.getElementById('df-rounds').value)||0;
   const cases=parseInt(document.getElementById('df-cases').value)||0;
   const rpc=parseInt(document.getElementById('df-rpc').value)||0;
   const wtpc=parseFloat(document.getElementById('df-wtpc').value)||0;
-  document.getElementById('df-total-rds').textContent=(cases*rpc).toLocaleString();
-  document.getElementById('df-total-wt').textContent=(cases*wtpc).toFixed(1)+' lbs';
+  const totalRds=rounds||(cases*rpc);
+  document.getElementById('df-total-rds').textContent=totalRds.toLocaleString();
+  document.getElementById('df-total-wt').textContent=wtpc>0?(cases*wtpc).toFixed(1)+' lbs':'—';
 }
 function saveAmmo(idx){
   const a=DATA.ammo[idx];
   a.dodic=document.getElementById('df-dodic').value;
   a.type=document.getElementById('df-atype').value;
+  a.rounds=document.getElementById('df-rounds').value;
   a.cases=document.getElementById('df-cases').value;
   a.rpc=document.getElementById('df-rpc').value;
   a.wtpc=document.getElementById('df-wtpc').value;
@@ -960,7 +1011,7 @@ function openAdd(){
     pax:()=>`<div class="drawer-field"><label>Last Name, First</label><input id="mf-name" placeholder="SMITH, J"></div><div class="drawer-field"><label>Rank</label><input id="mf-rank" placeholder="SGT"></div><div class="drawer-field"><label>Section</label><input id="mf-sec" placeholder="1PLT"></div><div class="drawer-field"><label>Status</label><select id="mf-stat"><option>Present</option><option>Absent</option><option>TDY</option><option>Medical</option><option>LMTDU</option><option>On Leave</option></select></div>`,
     veh:()=>`<div class="drawer-field"><label>Bumper #</label><input id="mf-bumper" placeholder="A211"></div><div class="drawer-field"><label>Type</label><input id="mf-vtype" placeholder="M1151 HMMWV"></div><div class="drawer-field"><label>Status</label><select id="mf-vstat"><option>FMC</option><option>NMC-Maintenance</option><option>NMC-Fuel</option><option>Dispatched</option><option>In Motor Pool</option></select></div><div class="drawer-field"><label>Driver</label><input id="mf-drv" placeholder="Name"></div><div class="drawer-field"><label>Fuel</label><select id="mf-fuel"><option>Full</option><option>3/4</option><option>1/2</option><option>1/4</option><option>Empty</option></select></div>`,
     tasks:()=>`<div class="drawer-field"><label>Task</label><input id="mf-task" placeholder="What needs to be done?"></div><div class="drawer-field"><label>Priority</label><select id="mf-pri"><option>1-URGENT</option><option>2-HIGH</option><option>3-MEDIUM</option><option>4-LOW</option></select></div><div class="drawer-field"><label>Assigned To</label><input id="mf-asgn" placeholder="Name or element"></div><div class="drawer-field"><label>Status</label><select id="mf-tstat"><option>Not Started</option><option>In Progress</option><option>On Hold</option><option>Complete</option></select></div><div class="drawer-field"><label>Location</label><input id="mf-tloc" placeholder="Where?"></div>`,
-    ammo:()=>`<div class="drawer-field"><label>DODIC</label><input id="mf-dodic" placeholder="e.g. A059"></div><div class="drawer-field"><label>Ammo Type</label><input id="mf-atype" placeholder="e.g. 5.56mm Ball M855"></div><div class="drawer-field"><label># of Cases</label><input id="mf-cases" type="number" placeholder="0"></div><div class="drawer-field"><label>Rounds Per Case</label><input id="mf-rpc" type="number" placeholder="0"></div><div class="drawer-field"><label>Weight Per Case (lbs)</label><input id="mf-wtpc" type="number" step="0.1" placeholder="0"></div><div class="drawer-field"><label>Location</label><input id="mf-aloc" placeholder="Where is this stored?"></div><div class="drawer-field"><label>Notes</label><textarea id="mf-anotes"></textarea></div>`,
+    ammo:()=>`<div class="drawer-field"><label>DODIC</label><input id="mf-dodic" placeholder="e.g. A059"></div><div class="drawer-field"><label>Ammo Type</label><input id="mf-atype" placeholder="e.g. 5.56mm Ball M855"></div><div class="drawer-field"><label>Round Count</label><input id="mf-rounds" type="number" placeholder="Total rounds"></div><div class="drawer-field"><label># of Cases (optional)</label><input id="mf-cases" type="number" placeholder="0"></div><div class="drawer-field"><label>Rounds Per Case (optional)</label><input id="mf-rpc" type="number" placeholder="0"></div><div class="drawer-field"><label>Weight Per Case lbs (optional)</label><input id="mf-wtpc" type="number" step="0.1" placeholder="0"></div><div class="drawer-field"><label>Location</label><input id="mf-aloc" placeholder="Where is this stored?"></div><div class="drawer-field"><label>Notes</label><textarea id="mf-anotes"></textarea></div>`,
     dash:()=>`<div class="drawer-field"><label>Last Name, First</label><input id="mf-name" placeholder="SMITH, J"></div><div class="drawer-field"><label>Rank</label><input id="mf-rank" placeholder="SGT"></div><div class="drawer-field"><label>Section</label><input id="mf-sec" placeholder="1PLT"></div><div class="drawer-field"><label>Status</label><select id="mf-stat"><option>Present</option><option>Absent</option><option>TDY</option><option>Medical</option><option>LMTDU</option></select></div>`,
   };
   const titles={pax:'ADD SOLDIER',veh:'ADD VEHICLE',tasks:'ADD TASK',ammo:'ADD AMMO LOT',dash:'ADD SOLDIER'};
@@ -998,7 +1049,7 @@ function submitDrawer(){
     push({action:'addRow',sheet:'tasks',data:rec});
     renderTasks();renderDash();
   }else if(m.type==='ammo'){
-    const rec={dodic:g('mf-dodic'),type:g('mf-atype'),cases:g('mf-cases'),rpc:g('mf-rpc'),wtpc:g('mf-wtpc'),location:g('mf-aloc'),notes:g('mf-anotes')};
+    const rec={dodic:g('mf-dodic'),type:g('mf-atype'),rounds:g('mf-rounds'),cases:g('mf-cases'),rpc:g('mf-rpc'),wtpc:g('mf-wtpc'),location:g('mf-aloc'),notes:g('mf-anotes')};
     if(!DATA.ammo)DATA.ammo=[];
     DATA.ammo.push(rec);
     push({action:'addRow',sheet:'ammo',data:rec});
