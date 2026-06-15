@@ -951,7 +951,14 @@ function openSoldier(idx) {
   <input type="hidden" id="df-location" value="${p.location||''}">
   <span style="color:var(--border2);font-size:14px;margin-left:4px">›</span>
 </div>
-        <div class="field-row"><span class="field-label">Vehicle</span><input class="field-input" id="df-vehicle" value="${p.vehicle||''}" placeholder="Assigned vehicle"></div>
+        <div class="field-row" onclick="openVehPicker(veh=>{document.getElementById('df-vehicle').value=veh;document.getElementById('df-veh-display').textContent=veh;})" style="cursor:pointer">
+  <span class="field-label">Vehicle</span>
+  <span class="field-val" id="df-veh-display" style="color:${p.vehicle?'var(--text)':'var(--border2)'}">
+    ${p.vehicle||'Tap to assign vehicle'}
+  </span>
+  <input type="hidden" id="df-vehicle" value="${p.vehicle||''}">
+  <span style="color:var(--border2);font-size:14px;margin-left:4px">›</span>
+</div>
         <div class="field-row"><span class="field-label">Task</span><input class="field-input" id="df-task" value="${p.task||''}" placeholder="Assigned task"></div>
         <div class="field-row"><span class="field-label">Updated</span><span class="field-val" style="font-family:var(--mono);font-size:12px;color:var(--text-dim)">${p.updated||'—'}</span></div>
       </div>
@@ -1272,6 +1279,70 @@ function deleteLocation(idx) {
 function selectLocation(loc) {
   document.getElementById('loc-overlay').classList.remove('open');
   if (locPickerCallback) locPickerCallback(loc);
+}
+  // ═══════════════════════════════════════════════════════════
+// VEHICLE PICKER
+// ═══════════════════════════════════════════════════════════
+const VEH_KEY = 'unit_ops_vehicles_list';
+let savedVehicles = JSON.parse(localStorage.getItem(VEH_KEY) || '["A211","804E","A111","A232","804D"]');
+let vehPickerCallback = null;
+
+function openVehPicker(callback) {
+  vehPickerCallback = callback;
+  document.getElementById('loc-input').value = '';
+  renderVehPickerList();
+  document.getElementById('loc-overlay').classList.add('open');
+  document.getElementById('loc-title').textContent = 'ASSIGN VEHICLE';
+  document.getElementById('loc-add-btn').onclick = addVehicleToList;
+  document.getElementById('loc-input').placeholder = 'Type a bumper #...';
+  document.getElementById('loc-cancel').onclick = () => {
+    document.getElementById('loc-overlay').classList.remove('open');
+    resetLocPicker();
+  };
+  setTimeout(() => document.getElementById('loc-input').focus(), 300);
+}
+
+function renderVehPickerList() {
+  const list = document.getElementById('loc-list');
+  if (savedVehicles.length === 0) {
+    list.innerHTML = '<div class="loc-empty">No vehicles — type a bumper # above to add one</div>';
+    return;
+  }
+  list.innerHTML = savedVehicles.map((v, i) => `
+    <div class="loc-item">
+      <div class="loc-item-name" onclick="selectVehicle('${v}')">${v}</div>
+      <div class="loc-item-del" onclick="deleteVehicleFromList(${i})">✕</div>
+    </div>`).join('');
+}
+
+function addVehicleToList() {
+  const input = document.getElementById('loc-input');
+  const val = input.value.trim().toUpperCase();
+  if (!val) return;
+  if (!savedVehicles.includes(val)) {
+    savedVehicles.unshift(val);
+    localStorage.setItem(VEH_KEY, JSON.stringify(savedVehicles));
+  }
+  selectVehicle(val);
+}
+
+function deleteVehicleFromList(idx) {
+  savedVehicles.splice(idx, 1);
+  localStorage.setItem(VEH_KEY, JSON.stringify(savedVehicles));
+  renderVehPickerList();
+}
+
+function selectVehicle(veh) {
+  document.getElementById('loc-overlay').classList.remove('open');
+  resetLocPicker();
+  if (vehPickerCallback) vehPickerCallback(veh);
+}
+
+function resetLocPicker() {
+  document.getElementById('loc-title').textContent = 'SELECT OR ADD LOCATION';
+  document.getElementById('loc-add-btn').onclick = addLocation;
+  document.getElementById('loc-input').placeholder = 'Type a location...';
+  document.getElementById('loc-cancel').onclick = () => document.getElementById('loc-overlay').classList.remove('open');
 }
 // ── INIT
 fetchData();
