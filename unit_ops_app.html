@@ -925,9 +925,12 @@ function openSoldier(idx) {
   const p = DATA.personnel[idx];
   detailType='pax'; detailIdx=idx;
 
-  document.getElementById('detail-name').textContent = p.name;
-  document.getElementById('detail-rank').textContent = `${p.rank} · ${p.section||'—'}`;
-  document.getElementById('detail-badge').innerHTML  = badge(p.status||'?', sc(p.status));
+document.getElementById('detail-name').innerHTML = `<input id="df-name" value="${p.name}" style="background:none;border:none;color:var(--text);font-size:17px;font-weight:700;font-family:inherit;outline:none;width:100%">`;
+  document.getElementById('detail-rank').innerHTML = `
+    <input id="df-rank" value="${p.rank}" style="background:none;border:none;color:var(--text-dim);font-size:10px;font-family:var(--mono);letter-spacing:1px;outline:none;width:45px">
+    <span style="color:var(--text-dim)"> · </span>
+    <input id="df-section" value="${p.section||''}" placeholder="Section" style="background:none;border:none;color:var(--text-dim);font-size:10px;font-family:var(--mono);letter-spacing:1px;outline:none;width:80px">`;
+  document.getElementById('detail-badge').innerHTML = badge(p.status||'?', sc(p.status));
 
   const statuses = ['Present','Absent','TDY','Medical','LMTDU','On Leave','Unknown'];
   const c=sc(p.status);
@@ -987,12 +990,14 @@ function setSoldierStatus(el, status, idx) {
 
 function saveSoldier(idx) {
   const p = DATA.personnel[idx];
+  p.name     = document.getElementById('df-name').value;
+  p.rank     = document.getElementById('df-rank').value;
+  p.section  = document.getElementById('df-section').value;
   p.location = document.getElementById('df-location').value;
   p.vehicle  = document.getElementById('df-vehicle').value;
   p.task     = document.getElementById('df-task').value;
   p.notes    = document.getElementById('df-notes').value;
   p.updated  = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
-
   push({action:'updateRow', sheet:'personnel', rowIndex:p._row, data:p});
   closeDetail();
   renderPax(); renderDash();
