@@ -413,6 +413,54 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkM
 .crit-card.amber { border-left-color:var(--amber); }
 .crit-title { font-size:13px; font-weight:600; color:var(--text); }
 .crit-sub   { font-size:11px; color:var(--text-dim); margin-top:3px; }
+  /* ── LOCATION PICKER ── */
+#loc-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.8); z-index:300;
+  align-items:flex-end;
+}
+#loc-overlay.open { display:flex; }
+#loc-drawer {
+  width:100%; background:var(--surface);
+  border-top:1px solid var(--border);
+  border-radius:16px 16px 0 0;
+  max-height:70dvh; display:flex; flex-direction:column;
+  padding-bottom:env(safe-area-inset-bottom);
+  animation:slideUp .25s ease;
+}
+#loc-header {
+  padding:12px 16px 10px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+#loc-title {
+  font-family:var(--mono); font-size:10px; letter-spacing:2px;
+  color:var(--text-dim); text-transform:uppercase; margin-bottom:10px;
+}
+#loc-input-row { display:flex; gap:8px; align-items:center; }
+#loc-input {
+  flex:1; background:var(--bg); border:1px solid var(--border2);
+  border-radius:8px; color:var(--text); font-size:15px;
+  font-family:inherit; padding:9px 12px; outline:none;
+}
+#loc-input:focus { border-color:var(--od); }
+#loc-add-btn {
+  background:var(--od); border:none; border-radius:8px;
+  color:#fff; font-size:13px; font-weight:600;
+  padding:9px 14px; cursor:pointer; white-space:nowrap; flex-shrink:0;
+}
+#loc-add-btn:active { opacity:.7; }
+#loc-list { overflow-y:auto; flex:1; padding:8px 12px 12px; display:flex; flex-direction:column; gap:2px; }
+.loc-item { display:flex; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.loc-item-name { flex:1; padding:12px 14px; font-size:14px; color:var(--text); cursor:pointer; }
+.loc-item-del { padding:12px 14px; color:var(--text-dim); cursor:pointer; font-size:16px; border-left:1px solid var(--border); }
+.loc-item-del:active { color:var(--red); background:#1A0A0A; }
+.loc-empty { text-align:center; padding:24px; color:var(--text-dim); font-size:13px; }
+#loc-cancel {
+  margin:0 12px 12px; padding:13px; border-radius:10px;
+  background:var(--surface2); border:1px solid var(--border2);
+  color:var(--text-dim); font-size:15px; font-weight:600; cursor:pointer;
+}
 
 /* ── SPINNER ── */
 .spin { text-align:center; padding:32px; color:var(--text-dim); font-size:12px; }
@@ -582,6 +630,20 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkM
   </div>
   <div id="detail-body">
     <!-- injected by JS -->
+  </div>
+</div>
+  <!-- ════ LOCATION PICKER ════ -->
+<div id="loc-overlay" onclick="closeLocPicker(event)">
+  <div id="loc-drawer">
+    <div id="loc-header">
+      <div id="loc-title">SELECT OR ADD LOCATION</div>
+      <div id="loc-input-row">
+        <input id="loc-input" placeholder="Type a location..." onkeydown="if(event.key==='Enter')addLocation()">
+        <button id="loc-add-btn" onclick="addLocation()">+ Add</button>
+      </div>
+    </div>
+    <div id="loc-list"></div>
+    <button id="loc-cancel" onclick="document.getElementById('loc-overlay').classList.remove('open')">Cancel</button>
   </div>
 </div>
 
@@ -881,7 +943,14 @@ function openSoldier(idx) {
     <div class="detail-section">
       <div class="detail-section-title">Personnel Details</div>
       <div class="field-group">
-        <div class="field-row"><span class="field-label">Location</span><input class="field-input" id="df-location" value="${p.location||''}" placeholder="Current location"></div>
+        <div class="field-row" onclick="openLocPicker(loc=>{document.getElementById('df-location').value=loc;document.getElementById('df-loc-display').textContent=loc;})" style="cursor:pointer">
+  <span class="field-label">Location</span>
+  <span class="field-val" id="df-loc-display" style="color:${p.location?'var(--text)':'var(--border2)'}">
+    ${p.location||'Tap to set location'}
+  </span>
+  <input type="hidden" id="df-location" value="${p.location||''}">
+  <span style="color:var(--border2);font-size:14px;margin-left:4px">›</span>
+</div>
         <div class="field-row"><span class="field-label">Vehicle</span><input class="field-input" id="df-vehicle" value="${p.vehicle||''}" placeholder="Assigned vehicle"></div>
         <div class="field-row"><span class="field-label">Task</span><input class="field-input" id="df-task" value="${p.task||''}" placeholder="Assigned task"></div>
         <div class="field-row"><span class="field-label">Updated</span><span class="field-val" style="font-family:var(--mono);font-size:12px;color:var(--text-dim)">${p.updated||'—'}</span></div>
@@ -1150,7 +1219,60 @@ function nav(name, btn) {
   btn.classList.add('active');
   document.getElementById('scroller').scrollTop=0;
 }
+// ═══════════════════════════════════════════════════════════
+// LOCATION PICKER
+// ═══════════════════════════════════════════════════════════
+const LOC_KEY = 'unit_ops_locations';
+let savedLocations = JSON.parse(localStorage.getItem(LOC_KEY) || '[]');
+let locPickerCallback = null;
 
+function openLocPicker(callback) {
+  locPickerCallback = callback;
+  document.getElementById('loc-input').value = '';
+  renderLocList();
+  document.getElementById('loc-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('loc-input').focus(), 300);
+}
+
+function closeLocPicker(e) {
+  if (e.target === document.getElementById('loc-overlay'))
+    document.getElementById('loc-overlay').classList.remove('open');
+}
+
+function renderLocList() {
+  const list = document.getElementById('loc-list');
+  if (savedLocations.length === 0) {
+    list.innerHTML = '<div class="loc-empty">No saved locations yet — type one above to add it</div>';
+    return;
+  }
+  list.innerHTML = savedLocations.map((loc, i) => `
+    <div class="loc-item">
+      <div class="loc-item-name" onclick="selectLocation('${loc.replace(/'/g,"\\'")}')">${loc}</div>
+      <div class="loc-item-del" onclick="deleteLocation(${i})">✕</div>
+    </div>`).join('');
+}
+
+function addLocation() {
+  const input = document.getElementById('loc-input');
+  const val = input.value.trim();
+  if (!val) return;
+  if (!savedLocations.includes(val)) {
+    savedLocations.unshift(val);
+    localStorage.setItem(LOC_KEY, JSON.stringify(savedLocations));
+  }
+  selectLocation(val);
+}
+
+function deleteLocation(idx) {
+  savedLocations.splice(idx, 1);
+  localStorage.setItem(LOC_KEY, JSON.stringify(savedLocations));
+  renderLocList();
+}
+
+function selectLocation(loc) {
+  document.getElementById('loc-overlay').classList.remove('open');
+  if (locPickerCallback) locPickerCallback(loc);
+}
 // ── INIT
 fetchData();
 </script>
