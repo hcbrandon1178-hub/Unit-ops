@@ -603,7 +603,7 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkM
 // CONFIG & STATE
 // ═══════════════════════════════════════════════════════════
 const URL_KEY = 'unit_ops_url';
-let SHEET_URL = localStorage.getItem(URL_KEY) || '';
+let SHEET_URL = localStorage.getItem(URL_KEY) || 'https://script.google.com/macros/s/AKfycbwC5zwCc-y_3fA7T0kQY8I8hGtSmYTcH4-OzQ4fyrC5QiWmbIrkEd9cg3vKcbyT6n_5nA/exec';
 let DATA = { personnel:[], vehicles:[], locations:[], tasks:[], calendar:{} };
 let currentView = 'dash';
 let paxFilter   = 'all';
